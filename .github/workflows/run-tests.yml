@@ -5,7 +5,6 @@ on:
 
 jobs:
   test:
-    name: Run Swift Tests
     runs-on: macos-latest
 
     steps:
