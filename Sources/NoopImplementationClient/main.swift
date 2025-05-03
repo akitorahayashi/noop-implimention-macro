@@ -1,8 +1,14 @@
 import NoopImplementation
+import Foundation
 
-let a = 17
-let b = 25
+// --- Client Code Using Generated Types ---
 
-let (result, code) = #stringify(a + b)
+// Initialize the generated class directly
+let noopImageCache: ImageCacheProtocol = NoopImageCacheProtocol()
 
-print("The value \(result) was produced by the code \"\(code)\"")
+print("\nImageCacheProtocol initialized.")
+// Add some example usage for ImageCacheProtocol
+let imageUrl = URL(string: "https://example.com/image.png")!
+
+// Initialize the generated class directly
+let noopEmpty = NoopEmptyProtocol()

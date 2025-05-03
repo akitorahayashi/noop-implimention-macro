@@ -14,34 +14,43 @@
 `@NoopImplementation` マクロは、適用されたプロトコルに対して以下の要素を生成します。
 
 1.  **No-Opクラス** プロトコルに準拠する `Noop{プロトコル名}` という名前のクラス。ただし、元のプロトコル名が `Protocol` で終わる場合は、その `Protocol` を除いた名前になります (例: `MyServiceProtocol` -> `NoopMyService`)。
+1.  **No-Opクラス** プロトコルに準拠する `public final class Noop{プロトコル名}: {プロトコル名}` という名前のクラス。
+    *   **命名規則:** 生成されるクラス名は、常に `Noop` + **完全なプロトコル名** となります (例: `MyServiceProtocol` -> `NoopMyServiceProtocol`, `SimpleService` -> `NoopSimpleService`)。
+    *   **理由:** これは `@attached(peer, names: prefixed(...))` マクロの制約によるものです。Swift コンパイラは `prefixed()` に対して、元の名前に単純に接頭辞を追加しただけの厳密な名前を期待するため、条件的に `Protocol` サフィックスを削除する命名規則はエラーとなります。
     *   **メソッド** 空の実装。
     *   **プロパティ** 型に基づいたデフォルト値。
         *   `Bool` は `false`
-        *   `Int` は `0`
-        *   `String` は `""`
-        *   `Optional` は `nil`
-        *   その他 `.init()` またはコンパイラが推論可能なデフォルト値（詳細は[注意点・設計上の懸念](#⚠️-注意点設計上の懸念)参照）。
-2.  **静的アクセサ (デフォルト)** 元のプロトコルに対する `extension` として `static var noop: Self { Noop{プロトコル名}() }` を生成し、`.noop` で簡単にアクセス可能にします。
+
+**注意:** Swift Macro の現在の制約により、`.noop` 静的アクセサ (例: `MyServiceProtocol.noop`) は自動生成されません。
+ただし、生成される `Noop{プロトコル名}` クラスには、便利な `static var noop` が含まれます。
 
 ```swift
-@NoopImplementation
-protocol LoggerProtocol {
-    func log(_ message: String)
-    func error(_ message: String) -> Bool
-}
-
-// 以下が自動生成される
-class NoopLogger: LoggerProtocol {
-    func log(_ message: String) {}
-    func error(_ message: String) -> Bool { false }
-}
-
-extension LoggerProtocol {
-    static var noop: LoggerProtocol {
-        NoopLogger()
-    }
-}
+// 利用例
+let dummyService: YourProtocolName = NoopYourProtocolName()
 ```
+
+## ディレクトリ構成
+
+プロジェクトは Swift Package Manager (SPM) を利用して管理されています。主要なディレクトリとファイルは以下の通りです。
+
+```
+.
+├── Sources/
+│   ├── NoopImplementation/
+│   └── NoopImplementationMacros/
+├── Tests/
+│   └── NoopImplementationTests/
+├── .gitignore
+├── Package.swift
+├── Package.resolved
+└── README.md
+```
+
+**主要ディレクトリの役割:**
+
+*   `Sources/NoopImplementationMacros/`: マクロの **実装** (コード生成ロジック)
+*   `Sources/NoopImplementation/`: マクロの **定義** と公開 (利用者が使うインターフェース)
+*   `Sources/NoopImplementationClient/`: マクロの **利用例** (動作確認用サンプル)
 
 ## 技術スタック
 
@@ -89,6 +98,7 @@ extension LoggerProtocol {
 *   **`static` アクセサの制御** `@NoopImplementation(generateStaticAccessor: false)` のように、`.noop` アクセサの生成をON/OFFできるオプション。
 *   **ビルド構成限定** `@NoopImplementation(forPreviewOnly: true)` のように、デバッグビルド（または特定のビルド構成）でのみコードを生成するオプション。
 *   **デフォルト値戦略の指定** `@NoopImplementation(defaultReturnStrategy: .zero / .fatal / .empty)` のように、デフォルト値の生成方法を選択できるオプション。
+*   **アクセサ自動生成:** Swift Macro の将来的な改善により、アクセサの自動生成が可能になるかもしれません。
 
 ## 利用方法
 
@@ -121,7 +131,9 @@ protocol MyServiceProtocol {
     func performAction(with value: Int)
 }
 
-// これで NoopMyService クラスと MyServiceProtocol.noop が利用可能になる
-let dummyService: MyServiceProtocol = .noop
-let specificInstance = NoopMyService()
+// これで NoopMyService クラスが利用可能になる
+let dummyService: MyServiceProtocol = NoopMyServiceProtocol()
+
+// もちろん直接初期化も可能
+let specificInstance = NoopMyServiceProtocol()
 ```
