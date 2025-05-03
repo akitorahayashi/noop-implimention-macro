@@ -1,0 +1,42 @@
+name: Release
+
+# トリガー: タグがプッシュされた時
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  test:
+    name: Build and Test Release
+    uses: ./.github/workflows/run-tests.yml
+    permissions:
+      contents: read
+
+  release:
+    name: Create GitHub Release
+    runs-on: macos-latest
+    needs: [test]
+    if: needs.test.result == 'success'
+    steps:
+      # リポジトリのコードをチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # GitHub リリースを作成
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # タグ名をリリース名として使用
+          name: Release ${{ github.ref_name }}
+          # タグ名をリリースバージョンとして使用
+          tag_name: ${{ github.ref_name }}
+          # true にすると、前回のリリースから今回のタグまでのコミットリストが自動で挿入される
+          generate_release_notes: true
+          # ドラフトリリースにする場合は true
+          draft: false
+          # プレリリースにする場合は true
+          prerelease: false 
