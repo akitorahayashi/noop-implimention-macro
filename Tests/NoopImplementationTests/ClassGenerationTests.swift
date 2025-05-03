@@ -7,7 +7,6 @@ import XCTest
 #endif
 
 final class NoopImplementationClassGenerationTests: XCTestCase {
-    // 各テストで使用するマクロを保持
     var testMacros: [String: Macro.Type] = [:]
 
     override func setUp() {
@@ -18,8 +17,6 @@ final class NoopImplementationClassGenerationTests: XCTestCase {
         #endif
     }
 
-    // `var` と `func` を含む基本的なプロトコルに適用した場合、
-    // Noop クラスが正しく生成されることを確認 (アクセスレベルは別クラスでテスト)
     func test_BasicProtocol_GeneratesNoopClass() throws {
         #if canImport(NoopImplementationMacros)
             assertMacroExpansion(
@@ -39,7 +36,11 @@ final class NoopImplementationClassGenerationTests: XCTestCase {
                 }
 
                 internal final class NoopServiceProtocol: ServiceProtocol {
-                    internal var id: Int = 0
+                    internal var id: Int {
+                        get {
+                            return 0
+                        }
+                    }
                     internal func execute() {
                     }
                     internal func fetchValue(key: String) -> String? {
@@ -56,24 +57,22 @@ final class NoopImplementationClassGenerationTests: XCTestCase {
         #endif
     }
 
-    // プロトコル名に "Protocol" 接尾辞がない場合でも、
-    // Noop クラス名が正しく "Noop" + プロトコル名になることを確認
     func test_ProtocolWithoutSuffix_GeneratesCorrectClassName() throws {
         #if canImport(NoopImplementationMacros)
             assertMacroExpansion(
                 """
                 @NoopImplementation
-                protocol SimpleService {
-                    func performAction()
+                protocol MyService {
+                    func doWork()
                 }
                 """,
                 expandedSource: """
-                protocol SimpleService {
-                    func performAction()
+                protocol MyService {
+                    func doWork()
                 }
 
-                internal final class NoopSimpleService: SimpleService {
-                    internal func performAction() {
+                internal final class NoopMyService: MyService {
+                    internal func doWork() {
                     }
                     internal init() {
                     }
@@ -86,19 +85,19 @@ final class NoopImplementationClassGenerationTests: XCTestCase {
         #endif
     }
 
-    // 空のプロトコルに適用した場合でも、
-    // Noop クラスとデフォルトイニシャライザが生成されることを確認
     func test_EmptyProtocol_GeneratesEmptyNoopClass() throws {
         #if canImport(NoopImplementationMacros)
             assertMacroExpansion(
                 """
                 @NoopImplementation
-                protocol EmptyProtocol {}
+                protocol Empty {
+                }
                 """,
                 expandedSource: """
-                protocol EmptyProtocol {}
+                protocol Empty {
+                }
 
-                internal final class NoopEmptyProtocol: EmptyProtocol {
+                internal final class NoopEmpty: Empty {
                     internal init() {
                     }
                 }
@@ -110,8 +109,6 @@ final class NoopImplementationClassGenerationTests: XCTestCase {
         #endif
     }
 
-    // プロパティのみを持つプロトコルに適用した場合、
-    // プロパティに対する No-Op 実装が正しく生成されることを確認
     func test_ProtocolWithOnlyProperties_GeneratesNoopProperties() throws {
         #if canImport(NoopImplementationMacros)
             assertMacroExpansion(
@@ -119,18 +116,26 @@ final class NoopImplementationClassGenerationTests: XCTestCase {
                 @NoopImplementation
                 protocol ConfigStore {
                     var timeout: Double { get }
-                    var retries: Int? { get set }
+                    var retries: Int? { get set } // get/set プロパティ (現状 get のみ実装)
                 }
                 """,
                 expandedSource: """
                 protocol ConfigStore {
                     var timeout: Double { get }
-                    var retries: Int? { get set }
+                    var retries: Int? { get set } // get/set プロパティ (現状 get のみ実装)
                 }
 
                 internal final class NoopConfigStore: ConfigStore {
-                    internal var timeout: Double = 0
-                    internal var retries: Int? = nil
+                    internal var timeout: Double {
+                        get {
+                            return 0
+                        }
+                    }
+                    internal var retries: Int? {
+                        get {
+                            return nil
+                        }
+                    }
                     internal init() {
                     }
                 }

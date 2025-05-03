@@ -2,7 +2,10 @@ import Foundation
 import NoopImplementation
 
 // マクロを使用するプロトコル
-@NoopImplementation
+@NoopImplementation(overrides: [
+    "UserProfile": UserProfile(id: "default-id", name: "Default User", email: "default@example.com",
+                               registrationDate: Date()),
+])
 protocol UserProfileFetcherProtocol {
     var defaultUsername: String { get }
 
@@ -19,7 +22,10 @@ protocol ImageCacheProtocol {
 @NoopImplementation
 protocol EmptyProtocol {}
 
-@NoopImplementation
+@NoopImplementation(overrides: [
+    "UserProfile": UserProfile(id: "default-id", name: "Default User", email: "default@example.com",
+                               registrationDate: Date()),
+])
 public protocol UserAPI {
     var fetchUserProfileCalledCount: Int { get }
 

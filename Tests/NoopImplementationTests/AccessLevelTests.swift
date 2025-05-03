@@ -3,14 +3,14 @@ import SwiftSyntaxMacrosTestSupport
 import XCTest
 
 #if canImport(NoopImplementationMacros)
-    import NoopImplementationMacros
+    @testable import NoopImplementationMacros
 #endif
 
 final class NoopImplementationAccessLevelTests: XCTestCase {
-    // 各テストで使用するマクロを保持
     var testMacros: [String: Macro.Type] = [:]
 
     override func setUp() {
+        super.setUp()
         #if canImport(NoopImplementationMacros)
             testMacros = [
                 "NoopImplementation": NoopImplementationMacro.self,
@@ -18,8 +18,6 @@ final class NoopImplementationAccessLevelTests: XCTestCase {
         #endif
     }
 
-    // `public` なプロトコルに適用した場合、
-    // 生成される Noop クラスとメンバーも `public` になることを確認
     func test_PublicProtocol_GeneratesPublicMembers() throws {
         #if canImport(NoopImplementationMacros)
             assertMacroExpansion(
@@ -37,7 +35,11 @@ final class NoopImplementationAccessLevelTests: XCTestCase {
                 }
 
                 public final class NoopPublicService: PublicService {
-                    public var version: String = ""
+                    public var version: String {
+                        get {
+                            return ""
+                        }
+                    }
                     public func fetchStatus() {
                     }
                     public init() {
@@ -51,13 +53,11 @@ final class NoopImplementationAccessLevelTests: XCTestCase {
         #endif
     }
 
-    // `internal` なプロトコル (または修飾子なし) に適用した場合、
-    // 生成される Noop クラスとメンバーが `internal` になることを確認
     func test_InternalProtocol_GeneratesInternalMembers() throws {
         #if canImport(NoopImplementationMacros)
-            // `internal` はデフォルトなので、修飾子なしでテスト
             assertMacroExpansion(
                 """
+                import Foundation
                 @NoopImplementation
                 protocol InternalService {
                     var data: Data { get }
@@ -65,13 +65,18 @@ final class NoopImplementationAccessLevelTests: XCTestCase {
                 }
                 """,
                 expandedSource: """
+                import Foundation
                 protocol InternalService {
                     var data: Data { get }
                     func doInternalWork()
                 }
 
                 internal final class NoopInternalService: InternalService {
-                    internal var data: Data = Data()
+                    internal var data: Data {
+                        get {
+                            return Data()
+                        }
+                    }
                     internal func doInternalWork() {
                     }
                     internal init() {
