@@ -60,6 +60,21 @@
 **主要技術:** Swift Macros
 **依存性管理:** Swift Package Manager (SPM)
 
+## 動作環境
+
+*   **Swift:** 5.9 以上
+*   **Platforms:**
+    *   macOS: 10.15 以上
+    *   iOS: 13 以上
+    *   tvOS: 13 以上
+    *   watchOS: 6 以上
+    *   macCatalyst: 13 以上
+
+## 注意事項
+
+*   **`associatedtype`:** `associatedtype` を含むプロトコルのサポートは制限される場合があります。
+*   **デフォルト値が自動生成されない型:** 一部の複雑な型（引数付きクロージャ、`Result` 等）は、自動でデフォルト値が生成されません。該当するメソッドやプロパティを呼び出すと、意図的にエラー（`fatalError` または `NoopError`）が発生します。これを避けるには `overrides` パラメータで値を指定してください。
+
 ## 対応しているデフォルト値
 
 以下の型に対しては、自動的にデフォルト値が生成されます。これらの値は `overrides` パラメータで上書き可能です。
@@ -73,70 +88,71 @@
 *   `() -> Void` 型のクロージャ: `{}`
 *   シンプルなイニシャライザを持つ型: `Type()`
 
-## 注意事項
-
-*   **`associatedtype`:** `associatedtype` を含むプロトコルのサポートは制限される場合があります。
-*   **複雑な型:** 引数や戻り値を持つクロージャ、`Result` 型、引数付きイニシャライザのみを持つ型など、単純なデフォルト値を生成できない型については、 `fatalError` が挿入されるか、`throws` 関数内では `NoopError` がスローされます。これらの型には `overrides` パラメータで明示的にデフォルト値を指定してください。
-
 ## 利用方法
 
-Swift Package Manager を利用して、このマクロをプロジェクトに追加します
+1.  **パッケージの追加:**
+    Swift Package Manager を利用して、このマクロをプロジェクトに追加します。
 
-```swift
-// Package.swift
-dependencies: [
-    // 最新版を利用する場合は main ブランチを指定
-    .package(url: "https://github.com/terrio32/noop-implimention-macro", branch: "main")
-    // または、特定のバージョン範囲を指定
-    // .package(url: "https://github.com/terrio32/noop-implimention-macro", from: "1.0.0")
-],
-targets: [
-    .target(
-        name: "YourAppTarget",
-        dependencies: [
-            .product(name: "NoopImplementation", package: "noop-implementation-macro")
-        ]
-    )
-]
-```
+    ```swift
+    // Package.swift
+    dependencies: [
+        // 最新版を利用する場合は main ブランチを指定
+        .package(url: "https://github.com/terrio32/noop-implimention-macro", branch: "main")
+        // または、特定のバージョン範囲を指定
+        // .package(url: "https://github.com/terrio32/noop-implimention-macro", from: "1.1.1") // 例: v1.1.1 を使う場合
+    ],
+    targets: [
+        .target(
+            name: "YourAppTarget",
+            dependencies: [
+                .product(name: "NoopImplementation", package: "noop-implementation-macro")
+            ]
+        )
+    ]
+    ```
 
-No-Op実装を生成したいプロトコルの前 `@NoopImplementation` を付与します。
-`overrides` パラメータに `[型名文字列: 値]` の形式で辞書リテラルを渡すことで、特定の型のデフォルト値をカスタマイズできます。
-(注: マクロは型チェック前にコードの構文に基づいて動作するため、型名は `"String"` や `"URL"` のように文字列リテラルで指定する必要があります。`String.self` のような形式はマクロ引数として直接使用できません。)
+2.  **マクロの適用:**
+    No-Op実装を生成したいプロトコルの前 `@NoopImplementation` を付与します。
+    `overrides` パラメータに `[型名文字列: 値]` の形式で辞書リテラルを渡すことで、特定の型のデフォルト値をカスタマイズできます。
+    (注: マクロは型チェック前にコードの構文に基づいて動作するため、型名は `"String"` や `"URL"` のように文字列リテラルで指定する必要があります。`String.self` のような形式はマクロ引数として直接使用できません。)
 
-```swift
-import NoopImplementation // マクロ定義を含むモジュールをインポート
-import Foundation // URL など Foundation 型を使う場合
+    ```swift
+    import NoopImplementation // マクロ定義を含むモジュールをインポート
+    import Foundation // URL など Foundation 型を使う場合
 
-// 基本的な使い方
-@NoopImplementation
-protocol MyServiceProtocol {
-    func fetchData() -> String?
-    func performAction(with value: Int)
-}
+    // 基本的な使い方
+    @NoopImplementation
+    protocol MyServiceProtocol {
+        func fetchData() -> String?
+        func performAction(with value: Int)
+    }
 
-// デフォルト値をカスタマイズする例
-@NoopImplementation(overrides: [
-    "String": "\"Overridden String\"",
-    "Int": 100,
-    "URL": URL(string: "https://custom.example.com")!,
-    "[String]": "[\"A\", \"B\"]" // 配列なども文字列キーで指定
-])
-protocol CustomizedService {
-    func getMessage() -> String
-    var identifier: Int { get }
-    var endpoint: URL { get }
-    var tags: [String] { get }
-    var standardValue: Bool { get } // これは標準の false
-}
+    // デフォルト値をカスタマイズする例
+    @NoopImplementation(overrides: [
+        "String": "\"Overridden String\"",
+        "Int": 100,
+        "URL": URL(string: "https://custom.example.com")!,
+        "[String]": "[\"A\", \"B\"]" // 配列なども文字列キーで指定
+    ])
+    protocol CustomizedService {
+        func getMessage() -> String
+        var identifier: Int { get }
+        var endpoint: URL { get }
+        var tags: [String] { get }
+        var standardValue: Bool { get } // これは標準の false
+    }
+    ```
 
-// 生成されたクラス (Noop + プロトコル名) のインスタンスを直接初期化して利用します
-let dummyService: MyServiceProtocol = NoopMyServiceProtocol()
-let customService: CustomizedService = NoopCustomizedService()
+3.  **インスタンスの利用:**
+    生成されたクラス (Noop + プロトコル名) のインスタンスを直接初期化して利用します。
 
-print(dummyService.fetchData()) // nil (Optionalのデフォルト)
-print(customService.getMessage()) // "Overridden String"
-print(customService.identifier) // 100
-print(customService.tags) // ["A", "B"]
-print(customService.standardValue) // false
-```
+    ```swift
+    let dummyService: MyServiceProtocol = NoopMyServiceProtocol()
+    let customService: CustomizedService = NoopCustomizedService()
+
+    print(dummyService.fetchData()) // nil (Optionalのデフォルト)
+    print(customService.getMessage()) // "Overridden String"
+    print(customService.identifier) // 100
+    print(customService.tags) // ["A", "B"]
+    print(customService.standardValue) // false
+    ```
