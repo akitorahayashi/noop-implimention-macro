@@ -1,50 +1,109 @@
-import Foundation // Date, Data, UUID を使うため
+import Foundation
 import SwiftSyntax
+import SwiftSyntaxBuilder // ExprSyntax を簡単に作るために便利
 
 /// 指定された型に対してデフォルト値の式を生成する
 public enum DefaultValueGenerator {
     // 指定された TypeSyntax に対するデフォルト値の文字列を生成します。
 
+    // 戻り値を ExprSyntax? に変更。Diagnostic は返さず、失敗時は nil を返す
     // swiftlint:disable:next cyclomatic_complexity
-    public static func generate(for type: TypeSyntax) -> String {
-        if let simpleType = type.as(IdentifierTypeSyntax.self)?.name.text {
-            switch simpleType {
-                case "Bool":
-                    return "false"
-                case "Int", "UInt", "Double", "Float", "CGFloat":
-                    return "0"
-                case "String":
-                    return "\"\"" // 空文字列リテラル
-                case "Void":
-                    return ""
-                case "Date":
-                    return "Date()"
-                // Foundation のインポートが必要
-                case "Data":
-                    return "Data()"
-                case "UUID":
-                    return "UUID()"
-                case "URL":
-                    // 一般的で有効な URL 文字列を強制アンラップしてデフォルト値とする
-                    return "URL(string: \"https://google.com\")!"
-                default:
-                    // 不明な単純型の場合は fatalError を生成
-                    return "fatalError(\"Cannot generate default value for type '\(simpleType)'\")"
-            }
-        } else if type.is(OptionalTypeSyntax.self) {
-            return "nil"
-        } else if type.is(ArrayTypeSyntax.self) || type.is(DictionaryTypeSyntax.self) {
-            return "[: ]" // 配列・辞書の空リテラル
-        } else if type.is(TupleTypeSyntax.self) {
-            // タプルは未対応 (fatalError)
-            return "fatalError(\"Default tuple generation not implemented\")"
-        } else if type.description.hasPrefix("some ") { // `some Protocol` の処理
-            // 型の文字列表現からプロトコル部分を抽出して再帰
-            let constraintString = String(type.description.dropFirst("some ".count))
-            let constraintType = TypeSyntax(stringLiteral: constraintString)
-            return generate(for: constraintType)
+    public static func generateSyntax(for type: TypeSyntax) -> ExprSyntax? {
+        if type.is(OptionalTypeSyntax.self) {
+            // Optional 型は nil を生成
+            return ExprSyntax(NilLiteralExprSyntax())
         }
-        // 複雑な型や未知の型の場合は fatalError を生成
-        return "fatalError(\"Cannot generate default value for type \(type.description)\")"
+
+        if let simpleType = type.as(IdentifierTypeSyntax.self) {
+            let typeName = simpleType.name.text
+            let typeIdentifierExpr = ExprSyntax(DeclReferenceExprSyntax(baseName: simpleType.name))
+
+            switch typeName {
+                case "Int", "UInt", "Double", "Float", "CGFloat", "TimeInterval", "NSInteger", "NSUInteger":
+                    return ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
+                case "String", "NSString":
+                    return ExprSyntax(StringLiteralExprSyntax(content: ""))
+                case "Bool":
+                    return ExprSyntax(BooleanLiteralExprSyntax(literal: .keyword(.false)))
+                case "Void", "()":
+                    // Void は式として表現できないため nil (生成失敗)
+                    return nil
+                // Foundation 型 (イニシャライザ呼び出しで生成)
+                case "Date", "Data", "UUID":
+                    let initCall = FunctionCallExprSyntax(
+                        calledExpression: typeIdentifierExpr,
+                        leftParen: .leftParenToken(),
+                        arguments: LabeledExprListSyntax([]),
+                        rightParen: .rightParenToken()
+                    )
+                    return ExprSyntax(initCall)
+                case "URL":
+                    let urlStringLiteral = StringLiteralExprSyntax(content: "https://apple.com")
+                    let argument = LabeledExprSyntax(label: "string", expression: urlStringLiteral)
+                    let initCall = FunctionCallExprSyntax(
+                        calledExpression: typeIdentifierExpr,
+                        leftParen: .leftParenToken(),
+                        arguments: LabeledExprListSyntax([argument]),
+                        rightParen: .rightParenToken()
+                    )
+                    let forceUnwrap = ForceUnwrapExprSyntax(expression: initCall)
+                    return ExprSyntax(forceUnwrap)
+                default:
+                    // 不明な IdentifierType: Type() を試さず nil (生成失敗) を返す
+                    return nil
+            }
+        }
+
+        if type.is(ArrayTypeSyntax.self) {
+            return ExprSyntax(ArrayExprSyntax(elements: []))
+        }
+
+        if type.is(DictionaryTypeSyntax.self) {
+            // 空の辞書リテラル [:] を生成するように修正
+            return ExprSyntax(DictionaryExprSyntax(content: .colon(.colonToken())))
+        }
+
+        if let tupleType = type.as(TupleTypeSyntax.self) {
+            var elements: [LabeledExprSyntax] = []
+            for element in tupleType.elements {
+                let elementType = element.type
+                // 再帰呼び出し。要素生成に失敗したらタプル全体も nil (生成失敗)
+                guard let elementExpr = generateSyntax(for: elementType) else {
+                    return nil
+                }
+                let tupleElement = LabeledExprSyntax(
+                    label: element.firstName,
+                    colon: element.firstName != nil ? .colonToken(trailingTrivia: .space) : nil,
+                    expression: elementExpr
+                )
+                elements.append(tupleElement)
+            }
+            return ExprSyntax(TupleExprSyntax(elements: LabeledExprListSyntax(elements)))
+        }
+
+        // FunctionTypeSyntax (クロージャ) の処理を追加
+        if let closureType = type.as(FunctionTypeSyntax.self) {
+            // dump(closureType) // デバッグ用 dump は一旦コメントアウト
+            // 引数なし、戻り値 Void のシンプルなクロージャのみ対応
+            // closureType.returnClause と returnClause.type は非オプショナルとして扱う
+            if closureType.parameters.isEmpty {
+                let returnType = closureType.returnClause.type
+                if let returnTypeIdentifier = returnType.as(IdentifierTypeSyntax.self),
+                   returnTypeIdentifier.name.text == "Void" || returnTypeIdentifier.name.text == "()"
+                {
+                    // 空のクロージャ式 {} を生成
+                    return ExprSyntax(ClosureExprSyntax(statements: []))
+                } else {
+                    // Void 以外の戻り値を持つクロージャは未対応
+                    return nil
+                }
+            } else {
+                // 引数を持つクロージャは未対応
+                return nil
+            }
+        }
+
+        // その他の未対応型 (クロージャ等)
+        return nil
     }
 }

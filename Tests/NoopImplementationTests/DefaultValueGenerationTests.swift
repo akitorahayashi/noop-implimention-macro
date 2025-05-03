@@ -8,7 +8,6 @@ import XCTest
 #endif
 
 final class NIDefaultValueGenerationTests: XCTestCase {
-    // 各テストで使用するマクロを保持
     var testMacros: [String: Macro.Type] = [:]
 
     override func setUp() {
@@ -19,8 +18,6 @@ final class NIDefaultValueGenerationTests: XCTestCase {
         #endif
     }
 
-    // 様々な基本的な型 (Int, String, Bool, Optional, Array, Dictionary) を含むプロトコルに適用した場合、
-    // それぞれに対応する正しいデフォルト値が生成されることを確認
     func test_BasicTypes_GeneratesCorrectDefaultValues() throws {
         #if canImport(NoopImplementationMacros)
             assertMacroExpansion(
@@ -48,12 +45,36 @@ final class NIDefaultValueGenerationTests: XCTestCase {
                 }
 
                 internal final class NoopDataTypes: DataTypes {
-                    internal var count: Int = 0
-                    internal var name: String = ""
-                    internal var enabled: Bool = false
-                    internal var optionalValue: Double? = nil
-                    internal var list: [String] = [: ]
-                    internal var mapping: [Int: String] = [: ]
+                    internal var count: Int {
+                        get {
+                            return 0
+                        }
+                    }
+                    internal var name: String {
+                        get {
+                            return ""
+                        }
+                    }
+                    internal var enabled: Bool {
+                        get {
+                            return false
+                        }
+                    }
+                    internal var optionalValue: Double? {
+                        get {
+                            return nil
+                        }
+                    }
+                    internal var list: [String] {
+                        get {
+                            return []
+                        }
+                    }
+                    internal var mapping: [Int: String] {
+                        get {
+                            return [:]
+                        }
+                    }
                     internal func processVoid() {
                     }
                     internal init() {
@@ -67,8 +88,6 @@ final class NIDefaultValueGenerationTests: XCTestCase {
         #endif
     }
 
-    // Foundation 型 (Date, Data, UUID) を含むプロトコルに適用した場合、
-    // `.init()` によるデフォルト値が生成されることを確認
     func test_FoundationTypes_GeneratesInitDefaultValues() throws {
         #if canImport(NoopImplementationMacros)
             assertMacroExpansion(
@@ -90,9 +109,21 @@ final class NIDefaultValueGenerationTests: XCTestCase {
                 }
 
                 internal final class NoopFoundationData: FoundationData {
-                    internal var timestamp: Date = Date()
-                    internal var payload: Data = Data()
-                    internal var identifier: UUID = UUID()
+                    internal var timestamp: Date {
+                        get {
+                            return Date()
+                        }
+                    }
+                    internal var payload: Data {
+                        get {
+                            return Data()
+                        }
+                    }
+                    internal var identifier: UUID {
+                        get {
+                            return UUID()
+                        }
+                    }
                     internal init() {
                     }
                 }

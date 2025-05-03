@@ -60,11 +60,23 @@
 **主要技術:** Swift Macros
 **依存性管理:** Swift Package Manager (SPM)
 
+## 対応しているデフォルト値
+
+以下の型に対しては、自動的にデフォルト値が生成されます。これらの値は `overrides` パラメータで上書き可能です。
+
+*   基本的な数値型 (`Int`, `Double`, `Float`, etc.): `0`
+*   `String`: `""`
+*   `Bool`: `false`
+*   `Array`: `[]`
+*   `Dictionary`: `[:]`
+*   `Optional`: `nil`
+*   `() -> Void` 型のクロージャ: `{}`
+*   シンプルなイニシャライザを持つ型: `Type()`
+
 ## 注意事項
 
-*   **デフォルト値:** 複雑な型（クロージャ、`Result` 等）やイニシャライザのない型に対するデフォルト値の自動生成は限定的で、`fatalError` になる可能性があります
-
-*   **`associatedtype`:** `associatedtype` を含むプロトコルのサポートは制限される場合があります
+*   **`associatedtype`:** `associatedtype` を含むプロトコルのサポートは制限される場合があります。
+*   **複雑な型:** 引数や戻り値を持つクロージャ、`Result` 型、引数付きイニシャライザのみを持つ型など、単純なデフォルト値を生成できない型については、 `fatalError` が挿入されるか、`throws` 関数内では `NoopError` がスローされます。これらの型には `overrides` パラメータで明示的にデフォルト値を指定してください。
 
 ## 利用方法
 
@@ -88,19 +100,43 @@ targets: [
 ]
 ```
 
-No-Op実装を生成したいプロトコルの前 `@NoopImplementation` を付与します
+No-Op実装を生成したいプロトコルの前 `@NoopImplementation` を付与します。
+`overrides` パラメータに `[型名文字列: 値]` の形式で辞書リテラルを渡すことで、特定の型のデフォルト値をカスタマイズできます。
+(注: マクロは型チェック前にコードの構文に基づいて動作するため、型名は `"String"` や `"URL"` のように文字列リテラルで指定する必要があります。`String.self` のような形式はマクロ引数として直接使用できません。)
 
 ```swift
 import NoopImplementation // マクロ定義を含むモジュールをインポート
+import Foundation // URL など Foundation 型を使う場合
 
+// 基本的な使い方
 @NoopImplementation
 protocol MyServiceProtocol {
     func fetchData() -> String?
     func performAction(with value: Int)
 }
 
-// NoopMyServiceProtocol クラスのインスタンスを直接初期化して利用します
-let dummyService: MyServiceProtocol = NoopMyServiceProtocol()
+// デフォルト値をカスタマイズする例
+@NoopImplementation(overrides: [
+    "String": "\"Overridden String\"",
+    "Int": 100,
+    "URL": URL(string: "https://custom.example.com")!,
+    "[String]": "[\"A\", \"B\"]" // 配列なども文字列キーで指定
+])
+protocol CustomizedService {
+    func getMessage() -> String
+    var identifier: Int { get }
+    var endpoint: URL { get }
+    var tags: [String] { get }
+    var standardValue: Bool { get } // これは標準の false
+}
 
-let specificInstance = NoopMyServiceProtocol()
+// 生成されたクラス (Noop + プロトコル名) のインスタンスを直接初期化して利用します
+let dummyService: MyServiceProtocol = NoopMyServiceProtocol()
+let customService: CustomizedService = NoopCustomizedService()
+
+print(dummyService.fetchData()) // nil (Optionalのデフォルト)
+print(customService.getMessage()) // "Overridden String"
+print(customService.identifier) // 100
+print(customService.tags) // ["A", "B"]
+print(customService.standardValue) // false
 ```
