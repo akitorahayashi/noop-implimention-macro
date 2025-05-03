@@ -1,5 +1,5 @@
-import SwiftSyntax
 import SwiftDiagnostics
+import SwiftSyntax
 
 // MARK: - Diagnostic Messages
 
@@ -23,10 +23,10 @@ public struct SimpleDiagnosticMessage: DiagnosticMessage, Error {
 
     // デフォルト値が生成できず fatalError を生成する場合の診断メッセージ
     public static func fatalErrorDefaultValue(typeName: String) -> SimpleDiagnosticMessage {
-        return SimpleDiagnosticMessage(
+        SimpleDiagnosticMessage(
             message: "型 '\(typeName)' のデフォルト値を生成できないため、 fatalError を挿入します。",
             diagnosticID: MessageID(domain: "NoopImplementationMacro", id: "fatalErrorDefaultValue"),
             severity: .warning // 警告とし、コンパイルエラーでユーザーに知らせる
         )
     }
-} 
+}

@@ -1,10 +1,10 @@
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
-import SwiftDiagnostics
 
-// MARK: - Macro Implementation
+// MARK: - マクロ実装
 
 public struct NoopImplementationMacro: PeerMacro {
     public static func expansion(
@@ -20,17 +20,30 @@ public struct NoopImplementationMacro: PeerMacro {
         }
 
         // プロトコル宣言からアクセスレベルを決定 (デフォルトは internal)
-        let protocolAccessModifier = protocolDecl.modifiers.first(where: { [.keyword(.public), .keyword(.internal), .keyword(.fileprivate), .keyword(.private)].contains($0.name.tokenKind) }) ?? DeclModifierSyntax(name: .keyword(.internal))
+        let protocolAccessModifier = protocolDecl.modifiers.first(where: { [
+            .keyword(.public),
+            .keyword(.internal),
+            .keyword(.fileprivate),
+            .keyword(.private),
+        ].contains($0.name.tokenKind) }) ?? DeclModifierSyntax(name: .keyword(.internal))
 
         let members = protocolDecl.memberBlock.members
         var noopStructMembers: [DeclSyntax] = []
         for member in members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
                 // 関数定義から No-Op 関数を生成 (アクセス修飾子を渡す)
-                noopStructMembers.append(Self.generateNoopFunction(from: funcDecl, accessModifier: protocolAccessModifier, in: context))
+                noopStructMembers.append(Self.generateNoopFunction(
+                    from: funcDecl,
+                    accessModifier: protocolAccessModifier,
+                    in: context
+                ))
             } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
                 // 変数定義から No-Op プロパティを生成 (アクセス修飾子を渡す)
-                noopStructMembers.append(contentsOf: Self.generateNoopProperty(from: varDecl, accessModifier: protocolAccessModifier, in: context))
+                noopStructMembers.append(contentsOf: Self.generateNoopProperty(
+                    from: varDecl,
+                    accessModifier: protocolAccessModifier,
+                    in: context
+                ))
             }
         }
 
@@ -57,15 +70,17 @@ public struct NoopImplementationMacro: PeerMacro {
         return [DeclSyntax(classDecl)]
     }
 
-    // MARK: - Helper Functions
-
-    /// 生成する No-Op クラスの名前を決定します。
+    /// 生成する No-Op クラスの名前を決定
     private static func determineNoopClassName(protocolName: String) -> String {
-        return "Noop" + protocolName
+        "Noop" + protocolName
     }
 
-    /// No-Op 関数実装を生成します。
-    private static func generateNoopFunction(from funcDecl: FunctionDeclSyntax, accessModifier: DeclModifierSyntax, in context: some MacroExpansionContext) -> DeclSyntax {
+    /// No-Op 関数実装を生成
+    private static func generateNoopFunction(
+        from funcDecl: FunctionDeclSyntax,
+        accessModifier: DeclModifierSyntax,
+        in context: some MacroExpansionContext
+    ) -> DeclSyntax {
         // 元の関数宣言をコピーして変更を開始
         var newFunc = funcDecl
 
@@ -75,7 +90,10 @@ public struct NoopImplementationMacro: PeerMacro {
         // func キーワードや関数名、パラメータ句などのトリビアもクリア
         newFunc.funcKeyword = newFunc.funcKeyword.with(\.leadingTrivia, []).with(\.trailingTrivia, [])
         newFunc.name = newFunc.name.with(\.leadingTrivia, []).with(\.trailingTrivia, [])
-        newFunc.signature.parameterClause = newFunc.signature.parameterClause.with(\.leadingTrivia, []).with(\.trailingTrivia, [])
+        newFunc.signature.parameterClause = newFunc.signature.parameterClause.with(\.leadingTrivia, []).with(
+            \.trailingTrivia,
+            []
+        )
         if var returnClause = newFunc.signature.returnClause {
             returnClause.arrow = returnClause.arrow.with(\.leadingTrivia, []).with(\.trailingTrivia, [])
             returnClause.type = returnClause.type.with(\.leadingTrivia, []).with(\.trailingTrivia, []) // 型のトリビアもクリア
@@ -132,9 +150,10 @@ public struct NoopImplementationMacro: PeerMacro {
                     )
                     context.diagnose(diagnostic)
                     // fatalError(...) は値を返さない式
-                    let fatalErrorString = "fatalError(\"Cannot generate default value for type '\(returnType.trimmedDescription)\'\")"
+                    let fatalErrorString =
+                        "fatalError(\"Cannot generate default value for type '\(returnType.trimmedDescription)\'\")"
                     newFunc.body = CodeBlockSyntax {
-                       ExprSyntax(stringLiteral: fatalErrorString)
+                        ExprSyntax(stringLiteral: fatalErrorString)
                     }
                 }
             } else {
@@ -160,10 +179,10 @@ public struct NoopImplementationMacro: PeerMacro {
             newParam.firstName.trailingTrivia = []
             // secondName は optional なので if var でクリア
             if var secondName = newParam.secondName {
-                 secondName.leadingTrivia = []
-                 secondName.trailingTrivia = []
-                 newParam.secondName = secondName
-             }
+                secondName.leadingTrivia = []
+                secondName.trailingTrivia = []
+                newParam.secondName = secondName
+            }
             // type は non-optional なので直接クリア
             newParam.type.leadingTrivia = []
             newParam.type.trailingTrivia = []
@@ -180,11 +199,15 @@ public struct NoopImplementationMacro: PeerMacro {
     }
 
     /// No-Op プロパティ実装を生成します。
-    private static func generateNoopProperty(from varDecl: VariableDeclSyntax, accessModifier: DeclModifierSyntax, in context: some MacroExpansionContext) -> [DeclSyntax] {
+    private static func generateNoopProperty(
+        from varDecl: VariableDeclSyntax,
+        accessModifier: DeclModifierSyntax,
+        in context: some MacroExpansionContext
+    ) -> [DeclSyntax] {
         var generatedProperties: [DeclSyntax] = []
 
         // 引数で渡されたアクセス修飾子を適用
-        // let accessModifier = DeclModifierSyntax(name: accessLevel) // <- This line is now redundant
+        // let accessModifier = DeclModifierSyntax(name: accessLevel) // <- この行は冗長
 
         // 各 binding を処理
         for binding in varDecl.bindings {
@@ -204,7 +227,8 @@ public struct NoopImplementationMacro: PeerMacro {
             cleanBinding.initializer = nil // 元の初期化子は不要
 
             guard let pattern = cleanBinding.pattern.as(IdentifierPatternSyntax.self),
-                  let typeAnnotation = cleanBinding.typeAnnotation else {
+                  let typeAnnotation = cleanBinding.typeAnnotation
+            else {
                 continue
             }
 
@@ -215,32 +239,25 @@ public struct NoopImplementationMacro: PeerMacro {
 
             // デフォルト値生成が fatalError になったか確認
             if defaultValue.starts(with: "fatalError") {
-                 // fatalError 生成に関する診断を報告
-                 let diagnostic = Diagnostic(
-                     node: Syntax(varType), // トリビアをクリアした型ノードを使用
-                     message: SimpleDiagnosticMessage.fatalErrorDefaultValue(typeName: varType.trimmedDescription)
-                 )
-                 context.diagnose(diagnostic)
+                // fatalError 生成に関する診断を報告
+                let diagnostic = Diagnostic(
+                    node: Syntax(varType), // トリビアをクリアした型ノードを使用
+                    message: SimpleDiagnosticMessage.fatalErrorDefaultValue(typeName: varType.trimmedDescription)
+                )
+                context.diagnose(diagnostic)
             }
 
-            // Use trimmedDescription for the fatalError message in properties too
-            let finalDefaultValue = defaultValue.starts(with: "fatalError")
-                ? "fatalError(\"Cannot generate default value for type '\(varType.trimmedDescription)\'\")"
-                : defaultValue
-
-            // 決定されたアクセスレベルで stored property を生成
+            // 新しい VariableDecl を生成 (アクセス修飾子を適用)
+            let newBinding = PatternBindingSyntax(
+                pattern: cleanBinding.pattern,
+                typeAnnotation: cleanBinding.typeAnnotation,
+                initializer: InitializerClauseSyntax(value: ExprSyntax(stringLiteral: defaultValue))
+            )
             let newVarDecl = VariableDeclSyntax(
                 modifiers: [accessModifier],
-                bindingSpecifier: TokenSyntax.keyword(.var, leadingTrivia: .space, trailingTrivia: .space)
-            ) {
-                PatternBindingSyntax(
-                    pattern: cleanBinding.pattern, // トリビアクリア済みのパターンを使用
-                    typeAnnotation: cleanBinding.typeAnnotation, // トリビアクリア済みの型アノテーションを使用
-                    initializer: InitializerClauseSyntax(value: ExprSyntax(stringLiteral: finalDefaultValue))
-                )
-            }
-
-            // 生成された変数宣言を追加
+                bindingSpecifier: .keyword(.var),
+                bindings: [newBinding]
+            )
             generatedProperties.append(DeclSyntax(newVarDecl))
         }
         return generatedProperties

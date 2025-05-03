@@ -1,12 +1,11 @@
-import NoopImplementation
 import Foundation
-
-// --- Definitions Moved Here ---
+import NoopImplementation
 
 // マクロを使用するプロトコル
 @NoopImplementation
 protocol UserProfileFetcherProtocol {
     var defaultUsername: String { get }
+
     func fetchUserProfile(userID: String) async throws -> UserProfile
     func clearCache()
 }
@@ -17,6 +16,12 @@ protocol ImageCacheProtocol {
     func storeImage(_ image: Data, for url: URL)
 }
 
-// Test case: Protocol with no requirements
 @NoopImplementation
-protocol EmptyProtocol {} 
+protocol EmptyProtocol {}
+
+@NoopImplementation
+public protocol UserAPI {
+    var fetchUserProfileCalledCount: Int { get }
+
+    func fetchUserProfile(id: String) async throws -> UserProfile
+}

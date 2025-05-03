@@ -3,7 +3,7 @@ import SwiftSyntaxMacrosTestSupport
 import XCTest
 
 #if canImport(NoopImplementationMacros)
-import NoopImplementationMacros
+    import NoopImplementationMacros
 #endif
 
 final class NoopImplementationAccessLevelTests: XCTestCase {
@@ -12,9 +12,9 @@ final class NoopImplementationAccessLevelTests: XCTestCase {
 
     override func setUp() {
         #if canImport(NoopImplementationMacros)
-        testMacros = [
-            "NoopImplementation": NoopImplementationMacro.self,
-        ]
+            testMacros = [
+                "NoopImplementation": NoopImplementationMacro.self,
+            ]
         #endif
     }
 
@@ -22,32 +22,32 @@ final class NoopImplementationAccessLevelTests: XCTestCase {
     // 生成される Noop クラスとメンバーも `public` になることを確認
     func test_PublicProtocol_GeneratesPublicMembers() throws {
         #if canImport(NoopImplementationMacros)
-        assertMacroExpansion(
-            """
-            @NoopImplementation
-            public protocol PublicService {
-                var version: String { get }
-                public func fetchStatus() // Public func
-            }
-            """,
-            expandedSource: """
-            public protocol PublicService {
-                var version: String { get }
-                public func fetchStatus() // Public func
-            }
+            assertMacroExpansion(
+                """
+                @NoopImplementation
+                public protocol PublicService {
+                    var version: String { get }
+                    public func fetchStatus()
+                }
+                """,
+                expandedSource: """
+                public protocol PublicService {
+                    var version: String { get }
+                    public func fetchStatus()
+                }
 
-            public final class NoopPublicService: PublicService {
-                public  var version: String = ""
-                public func fetchStatus() {
+                public final class NoopPublicService: PublicService {
+                    public var version: String = ""
+                    public func fetchStatus() {
+                    }
+                    public init() {
+                    }
                 }
-                public init() {
-                }
-            }
-            """,
-            macros: self.testMacros
-        )
+                """,
+                macros: testMacros
+            )
         #else
-        throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
+            throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
         #endif
     }
 
@@ -55,33 +55,33 @@ final class NoopImplementationAccessLevelTests: XCTestCase {
     // 生成される Noop クラスとメンバーが `internal` になることを確認
     func test_InternalProtocol_GeneratesInternalMembers() throws {
         #if canImport(NoopImplementationMacros)
-        // `internal` はデフォルトなので、修飾子なしでテスト
-        assertMacroExpansion(
-            """
-            @NoopImplementation
-            protocol InternalService {
-                var data: Data { get }
-                func doInternalWork()
-            }
-            """,
-            expandedSource: """
-            protocol InternalService {
-                var data: Data { get }
-                func doInternalWork()
-            }
+            // `internal` はデフォルトなので、修飾子なしでテスト
+            assertMacroExpansion(
+                """
+                @NoopImplementation
+                protocol InternalService {
+                    var data: Data { get }
+                    func doInternalWork()
+                }
+                """,
+                expandedSource: """
+                protocol InternalService {
+                    var data: Data { get }
+                    func doInternalWork()
+                }
 
-            internal final class NoopInternalService: InternalService {
-                internal var data: Data = Data()
-                internal func doInternalWork() {
+                internal final class NoopInternalService: InternalService {
+                    internal var data: Data = Data()
+                    internal func doInternalWork() {
+                    }
+                    internal init() {
+                    }
                 }
-                internal init() {
-                }
-            }
-            """,
-            macros: self.testMacros
-        )
+                """,
+                macros: testMacros
+            )
         #else
-        throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
+            throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
         #endif
     }
-} 
+}

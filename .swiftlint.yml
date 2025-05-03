@@ -1,0 +1,111 @@
+#===================================================================
+# SwiftLint Configuration
+# See https://realm.github.io/SwiftLint/rule-directory.html for rule details
+#===================================================================
+
+#-------------------------------------------------------------------
+# Analysis Targets
+#-------------------------------------------------------------------
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .git
+  - .build
+  - "**/*.generated.swift"
+
+#-------------------------------------------------------------------
+# Rule Configuration
+#-------------------------------------------------------------------
+disabled_rules:
+  - trailing_comma
+  - closure_parameter_position
+  - opening_brace
+  - closing_brace
+  - statement_position
+  - colon
+  - comma
+  - operator_usage_whitespace
+  - return_arrow_whitespace
+  - syntactic_sugar
+  - line_length
+  - function_body_length
+  - missing_docs
+
+  - block_based_kvo
+  - force_unwrapping
+
+opt_in_rules:
+  - empty_count
+  - sorted_imports
+  - closure_spacing
+  - first_where
+  - object_literal
+  - redundant_nil_coalescing
+  - strict_fileprivate
+  - let_var_whitespace
+  - unneeded_parentheses_in_closure_argument
+  - discouraged_optional_boolean
+  - implicitly_unwrapped_optional
+
+  - explicit_init
+  - fatal_error_message
+  - file_header
+  - prohibited_super_call
+  - single_test_class
+  - switch_case_on_newline
+  - vertical_parameter_alignment_on_call
+  - yoda_condition
+  - unused_optional_binding
+
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+#-------------------------------------------------------------------
+# Individual Rule Settings
+#-------------------------------------------------------------------
+# 循環的複雑度
+cyclomatic_complexity:
+  warning: 10
+
+# 暗黙的アンラップ型 (警告のみ)
+implicitly_unwrapped_optional: warning
+
+# 垂直方向の空白（最大1行まで）
+vertical_whitespace:
+  max_empty_lines: 1
+
+# ネストの深さ
+nesting:
+  type_level:
+    warning: 3
+  function_level:
+    warning: 5
+
+# 識別子の命名規則
+identifier_name:
+  min_length: 2
+  max_length: 50
+  excluded:
+    - id
+    - URL
+    - x
+    - y
+    - i
+    - j
+    - to
+    - at
+    - of
+    - from
+    - with
+
+# switch/case のインデント (SwiftFormatと合わせる)
+switch_case_alignment:
+  indented_cases: true
+
+#-------------------------------------------------------------------
+# Output Settings
+#-------------------------------------------------------------------
+reporter: "emoji"

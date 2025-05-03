@@ -1,14 +1,14 @@
-import NoopImplementation
 import Foundation
+import NoopImplementation
 
-// --- Client Code Using Generated Types ---
+// --- 生成された型を使用するクライアントコード ---
 
-// Initialize the generated class directly
+// 生成されたクラスを直接初期化
 let noopImageCache: ImageCacheProtocol = NoopImageCacheProtocol()
 
 print("\nImageCacheProtocol initialized.")
-// Add some example usage for ImageCacheProtocol
+// ImageCacheProtocol の使用例を追加
 let imageUrl = URL(string: "https://example.com/image.png")!
 
-// Initialize the generated class directly
+// 生成されたクラスを直接初期化
 let noopEmpty = NoopEmptyProtocol()

@@ -1,8 +1,8 @@
 // swift-tools-version: 5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
-import PackageDescription
 import CompilerPluginSupport
+import PackageDescription
 
 let package = Package(
     name: "noop-implimention-macro",
@@ -29,22 +29,22 @@ let package = Package(
             name: "NoopImplementationMacros",
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ]
         ),
 
         // Library that exposes the macro implementation to clients.
         .target(
-            name: "NoopImplementation", 
+            name: "NoopImplementation",
             dependencies: [
                 // Add dependency here
-                .target(name: "NoopImplementationMacros")
+                .target(name: "NoopImplementationMacros"),
             ]
         ),
 
         // A client of the library, which is able to use the macro expansion provided by the library.
         .executableTarget(
-            name: "NoopImplementationClient", 
+            name: "NoopImplementationClient",
             dependencies: ["NoopImplementation"]
         ),
 
