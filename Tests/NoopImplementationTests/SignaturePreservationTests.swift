@@ -1,20 +1,21 @@
+@testable import NoopImplementationMacros
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
 
 #if canImport(NoopImplementationMacros)
-import NoopImplementationMacros
+    import NoopImplementationMacros
 #endif
 
-final class NoopImplementationSignaturePreservationTests: XCTestCase {
+final class NISignaturePreservationTests: XCTestCase {
     // 各テストで使用するマクロを保持
     var testMacros: [String: Macro.Type] = [:]
 
     override func setUp() {
         #if canImport(NoopImplementationMacros)
-        testMacros = [
-            "NoopImplementation": NoopImplementationMacro.self,
-        ]
+            testMacros = [
+                "NoopImplementation": NoopImplementationMacro.self,
+            ]
         #endif
     }
 
@@ -22,30 +23,30 @@ final class NoopImplementationSignaturePreservationTests: XCTestCase {
     // `async` キーワードが保持された No-Op 関数が生成されることを確認
     func test_AsyncFunction_GeneratesAsyncNoopFunction() throws {
         #if canImport(NoopImplementationMacros)
-        assertMacroExpansion(
-            """
-            @NoopImplementation
-            protocol AsyncWorker {
-                func performAsyncTask() async -> Int
-            }
-            """,
-            expandedSource: """
-            protocol AsyncWorker {
-                func performAsyncTask() async -> Int
-            }
+            assertMacroExpansion(
+                """
+                @NoopImplementation
+                protocol AsyncWorker {
+                    func performAsyncTask() async -> Int
+                }
+                """,
+                expandedSource: """
+                protocol AsyncWorker {
+                    func performAsyncTask() async -> Int
+                }
 
-            internal final class NoopAsyncWorker: AsyncWorker {
-                internal func performAsyncTask() async -> Int {
-                    return 0
+                internal final class NoopAsyncWorker: AsyncWorker {
+                    internal func performAsyncTask() async -> Int {
+                        return 0
+                    }
+                    internal init() {
+                    }
                 }
-                internal init() {
-                }
-            }
-            """,
-            macros: self.testMacros
-        )
+                """,
+                macros: testMacros
+            )
         #else
-        throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
+            throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
         #endif
     }
 
@@ -53,30 +54,30 @@ final class NoopImplementationSignaturePreservationTests: XCTestCase {
     // `throws` キーワードが保持された No-Op 関数が生成されることを確認
     func test_ThrowsFunction_GeneratesThrowsNoopFunction() throws {
         #if canImport(NoopImplementationMacros)
-        assertMacroExpansion(
-            """
-            @NoopImplementation
-            protocol RiskyOperation {
-                func attempt() throws -> Bool
-            }
-            """,
-            expandedSource: """
-            protocol RiskyOperation {
-                func attempt() throws -> Bool
-            }
+            assertMacroExpansion(
+                """
+                @NoopImplementation
+                protocol RiskyOperation {
+                    func attempt() throws -> Bool
+                }
+                """,
+                expandedSource: """
+                protocol RiskyOperation {
+                    func attempt() throws -> Bool
+                }
 
-            internal final class NoopRiskyOperation: RiskyOperation {
-                internal func attempt() throws -> Bool {
-                    return false
+                internal final class NoopRiskyOperation: RiskyOperation {
+                    internal func attempt() throws -> Bool {
+                        return false
+                    }
+                    internal init() {
+                    }
                 }
-                internal init() {
-                }
-            }
-            """,
-            macros: self.testMacros
-        )
+                """,
+                macros: testMacros
+            )
         #else
-        throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
+            throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
         #endif
     }
 
@@ -84,30 +85,30 @@ final class NoopImplementationSignaturePreservationTests: XCTestCase {
     // `async` と `throws` キーワードが保持された No-Op 関数が生成されることを確認
     func test_AsyncThrowsFunction_GeneratesAsyncThrowsNoopFunction() throws {
         #if canImport(NoopImplementationMacros)
-        assertMacroExpansion(
-            """
-            @NoopImplementation
-            protocol ComplexTask {
-                func executeComplex() async throws -> String
-            }
-            """,
-            expandedSource: """
-            protocol ComplexTask {
-                func executeComplex() async throws -> String
-            }
+            assertMacroExpansion(
+                """
+                @NoopImplementation
+                protocol ComplexTask {
+                    func executeComplex() async throws -> String
+                }
+                """,
+                expandedSource: """
+                protocol ComplexTask {
+                    func executeComplex() async throws -> String
+                }
 
-            internal final class NoopComplexTask: ComplexTask {
-                internal func executeComplex() async throws -> String {
-                    return ""
+                internal final class NoopComplexTask: ComplexTask {
+                    internal func executeComplex() async throws -> String {
+                        return ""
+                    }
+                    internal init() {
+                    }
                 }
-                internal init() {
-                }
-            }
-            """,
-            macros: self.testMacros
-        )
+                """,
+                macros: testMacros
+            )
         #else
-        throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
+            throw XCTSkip("マクロはホストプラットフォームでのテスト実行時のみサポートされます")
         #endif
     }
-} 
+}
