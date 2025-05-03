@@ -1,20 +1,18 @@
 # Swift Package Manager
-/.build
-/Packages
+/.build/
+/Packages/
 .swiftpm/
+Package.resolved
+xcuserdata/
 
-# Xcode project files (if generated)
+# Xcode project files
 *.xcodeproj
 *.xcworkspace
 *.xcscheme
 *.xcuserstate
-xcuserdata/
 DerivedData/
 
 # macOS
 .DS_Store
 .netrc
 .cursor/
-
-# Resolved package dependencies (for libraries/frameworks)
-Package.resolved
