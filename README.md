@@ -60,6 +60,16 @@
 **主要技術:** Swift Macros
 **依存性管理:** Swift Package Manager (SPM)
 
+## 動作環境
+
+*   **Swift:** 5.9 以上
+*   **Platforms:**
+    *   macOS: 10.15 以上
+    *   iOS: 13 以上
+    *   tvOS: 13 以上
+    *   watchOS: 6 以上
+    *   macCatalyst: 13 以上
+
 ## 対応しているデフォルト値
 
 以下の型に対しては、自動的にデフォルト値が生成されます。これらの値は `overrides` パラメータで上書き可能です。
